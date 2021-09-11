@@ -28,9 +28,6 @@ class MainActivity : AppCompatActivity() {
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
 
-        //val account = GoogleSignIn.getLastSignedInAccount(this)
-        //updateUI(account)
-
         val signInButton = findViewById<SignInButton>(R.id.sign_in_button)
         signInButton.setSize(SignInButton.SIZE_WIDE)
         signInButton.setOnClickListener {
