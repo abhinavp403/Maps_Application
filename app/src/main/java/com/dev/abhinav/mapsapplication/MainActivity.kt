@@ -1,79 +1,48 @@
 package com.dev.abhinav.mapsapplication
 
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.auth.api.signin.GoogleSignInClient
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.SignInButton
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.tasks.Task
+import androidx.viewpager2.widget.ViewPager2
+import com.dev.abhinav.mapsapplication.adapter.TabPageAdapter
+import com.google.android.material.tabs.TabLayout
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var mGoogleSignInClient: GoogleSignInClient
-    private val RC_SIGN_IN = 9001
+    private lateinit var tabLayout: TabLayout
+    private lateinit var viewPager: ViewPager2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("488348096942-m8am5tihg6hdbqe3350miiufj1uhjdge.apps.googleusercontent.com")
-            .requestEmail()
-            .build()
+        tabLayout = findViewById(R.id.tabLayout)
+        viewPager = findViewById(R.id.viewpager)
+        viewPager.isUserInputEnabled = false
 
-        mGoogleSignInClient = GoogleSignIn.getClient(this, gso)
-
-        val signInButton = findViewById<SignInButton>(R.id.sign_in_button)
-        signInButton.setSize(SignInButton.SIZE_WIDE)
-        signInButton.setOnClickListener {
-            signIn()
-        }
+        setUpTabBar()
     }
 
-    private fun signIn() {
-        val signInIntent = mGoogleSignInClient.signInIntent
-        startActivityForResult(signInIntent, RC_SIGN_IN)
-    }
+    private fun setUpTabBar() {
+       val adapter = TabPageAdapter(this, tabLayout.tabCount)
+        viewPager.adapter = adapter
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == RC_SIGN_IN) {
-            val task: Task<GoogleSignInAccount> = GoogleSignIn.getSignedInAccountFromIntent(data)
-            handleSignInResult(task)
-        }
-    }
+        viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                tabLayout.selectTab(tabLayout.getTabAt(position))
+                viewPager.adapter!!.notifyDataSetChanged()
+            }
+        })
 
-    private fun handleSignInResult(task: Task<GoogleSignInAccount>) {
-        try {
-            val account = task.getResult(ApiException::class.java)
+        tabLayout.addOnTabSelectedListener(object: TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                viewPager.currentItem = tab.position
+            }
 
-            val googleId = account?.id ?: ""
-            Log.i("Google ID",googleId)
+            override fun onTabUnselected(tab: TabLayout.Tab?) {
+            }
 
-            val googleFirstName = account?.givenName ?: ""
-            Log.i("Google First Name", googleFirstName)
-
-            val googleLastName = account?.familyName ?: ""
-            Log.i("Google Last Name", googleLastName)
-
-            val googleEmail = account?.email ?: ""
-            Log.i("Google Email", googleEmail)
-
-            val googleProfilePicURL = account?.photoUrl.toString()
-            Log.i("Google Profile Pic URL", googleProfilePicURL)
-
-            val googleIdToken = account?.idToken ?: ""
-            Log.i("Google ID Token", googleIdToken)
-
-            val intent = Intent(this@MainActivity, MapsActivity::class.java)
-            startActivity(intent)
-        } catch (e: ApiException) {
-            Log.e("failed code=", e.statusCode.toString())
-        }
+            override fun onTabReselected(tab: TabLayout.Tab?) {
+            }
+        })
     }
 }
