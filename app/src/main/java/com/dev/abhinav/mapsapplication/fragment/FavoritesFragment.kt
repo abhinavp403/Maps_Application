@@ -13,6 +13,7 @@ import com.dev.abhinav.mapsapplication.database.LocationDatabase
 import org.jetbrains.anko.doAsync
 import org.jetbrains.anko.uiThread
 
+// Second Fragment
 class FavoritesFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
@@ -25,6 +26,7 @@ class FavoritesFragment : Fragment() {
         return view
     }
 
+    // Retrieves list from database and displays results in recycler view
     private fun retrieveList() {
         doAsync {
             db = LocationDatabase.invoke(activity?.applicationContext!!)
@@ -38,6 +40,7 @@ class FavoritesFragment : Fragment() {
         }
     }
 
+    // Updates list whenever Favorites Tab is clicked
     override fun onResume() {
         super.onResume()
         retrieveList()

@@ -6,6 +6,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.dev.abhinav.mapsapplication.adapter.TabPageAdapter
 import com.google.android.material.tabs.TabLayout
 
+// Called from SignInActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var tabLayout: TabLayout
@@ -22,10 +23,12 @@ class MainActivity : AppCompatActivity() {
         setUpTabBar()
     }
 
+    // Sets up Tab bar layout for fragments
     private fun setUpTabBar() {
        val adapter = TabPageAdapter(this, tabLayout.tabCount)
         viewPager.adapter = adapter
 
+        // Callback for changing pages
         viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 tabLayout.selectTab(tabLayout.getTabAt(position))
@@ -33,6 +36,7 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
+        // Callback when tab selection changes
         tabLayout.addOnTabSelectedListener(object: TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 viewPager.currentItem = tab.position

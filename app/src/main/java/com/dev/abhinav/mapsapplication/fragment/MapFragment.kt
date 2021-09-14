@@ -34,14 +34,16 @@ import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener
 import org.jetbrains.anko.doAsync
+import org.jetbrains.anko.uiThread
 
+// First Fragment
 class MapFragment : Fragment() {
 
     private lateinit var mMap: GoogleMap
     private lateinit var gpsIcon: ImageView
     private lateinit var placesClient: PlacesClient
 
-    private val TAG: String = "MapsFragment"
+    private val TAG: String = "MapFragment"
     private val FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION
     private val COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION
     private val LOCATION_PERMISSION_REQUEST_CODE = 1234
@@ -53,8 +55,6 @@ class MapFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_map, container, false)
         gpsIcon = view.findViewById(R.id.gps_icon)
-
-        //db = Room.databaseBuilder(activity?.applicationContext!!, LocationDatabase::class.java, "favorite-list.db").build()
         db = LocationDatabase.invoke(activity?.applicationContext!!)
 
         // to get location permission from device
@@ -77,18 +77,15 @@ class MapFragment : Fragment() {
             mMap.uiSettings.isMyLocationButtonEnabled = false
             init()
         }
-
-        // Add a marker in Sydney and move the camera
-//        val sydney = LatLng(-34.0, 151.0)
-//        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
     }
 
     private fun init() {
         Places.initialize(activity?.applicationContext!!, getString(R.string.google_maps_key))
         placesClient = Places.createClient(activity?.applicationContext!!)
 
-        // Initialize the AutocompleteSupportFragment.
+        initMarkers()
+
+        // Initialize the AutocompleteSupportFragment
         val autocompleteFragment = childFragmentManager.findFragmentById(R.id.autocomplete_fragment) as AutocompleteSupportFragment
 
         // Specify the types of place data to return.
@@ -102,10 +99,12 @@ class MapFragment : Fragment() {
                 mMap.addMarker(MarkerOptions().position(latLng!!).title(place.name))
                 place.name?.let { moveCamera(latLng, DEFAULT_ZOOM, it) }
 
+                // Creates dialog box when user clicks on marker
                 mMap.setOnMarkerClickListener {
                     val builder = AlertDialog.Builder(activity)
                     builder.setMessage("Add to Favorites?")
                     builder.setPositiveButton(android.R.string.yes) { _, _ ->
+                        // If OK, then marker is added to database
                         doAsync {
                             db.locationDao().insert(LocationEntity(place.id!!, place.name!!, place.address!!, place.latLng!!.latitude, place.latLng!!.longitude))
                         }
@@ -126,14 +125,29 @@ class MapFragment : Fragment() {
         }
     }
 
+    // Initialize map fragment with fragment manager
     private fun initMap() {
-        Log.d(TAG, "initMap: initializing map")
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(callback)
     }
 
+    // Adds markers to those locations saved in the database
+    private fun initMarkers() {
+        Log.d(TAG, "initMarkers")
+        doAsync {
+            db = LocationDatabase.invoke(activity?.applicationContext!!)
+            val data = db.locationDao().getAll()
+            uiThread {
+                data.forEach {
+                    mMap.addMarker(MarkerOptions().position(LatLng(it.latitude, it.longitude)).title(it.name))
+                }
+            }
+        }
+    }
+
+    // Resets location on map to current device location
     private fun getDeviceLocation() {
-        Log.d(TAG, "getDeviceLocation: getting the devices current location")
+        Log.d(TAG, "getDeviceLocation")
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(activity?.applicationContext!!)
         try {
             if (mLocationPermissionsGranted) {
@@ -154,8 +168,9 @@ class MapFragment : Fragment() {
         }
     }
 
+    // Gets location permission from user for this app
     private fun getLocationPermission() {
-        Log.d(TAG, "getLocationPermission: getting location permissions")
+        Log.d(TAG, "getLocationPermission")
         val permissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
         if (ContextCompat.checkSelfPermission(activity?.applicationContext!!, FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             if (ContextCompat.checkSelfPermission(activity?.applicationContext!!, COURSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -169,6 +184,7 @@ class MapFragment : Fragment() {
         }
     }
 
+    // Focuses camera on marker
     private fun moveCamera(latLng: LatLng, zoom: Float, title: String) {
         Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude)
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom))
@@ -182,7 +198,6 @@ class MapFragment : Fragment() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        Log.d(TAG, "onRequestPermissionsResult: called.")
         mLocationPermissionsGranted = false
         when (requestCode) {
             LOCATION_PERMISSION_REQUEST_CODE -> {
@@ -202,5 +217,11 @@ class MapFragment : Fragment() {
                 }
             }
         }
+    }
+
+    // Updates markers whenever Maps Tab is clicked
+    override fun onResume() {
+        super.onResume()
+        initMarkers()
     }
 }

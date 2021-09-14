@@ -12,6 +12,7 @@ import com.google.android.gms.common.SignInButton
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
 
+// Launcher Activity
 class SignInActivity : AppCompatActivity() {
 
     lateinit var mGoogleSignInClient: GoogleSignInClient
@@ -35,6 +36,7 @@ class SignInActivity : AppCompatActivity() {
         }
     }
 
+    // Sends intent to call Google sign accout dialog box
     private fun signIn() {
         val signInIntent = mGoogleSignInClient.signInIntent
         startActivityForResult(signInIntent, RC_SIGN_IN)
@@ -50,29 +52,12 @@ class SignInActivity : AppCompatActivity() {
 
     private fun handleSignInResult(task: Task<GoogleSignInAccount>) {
         try {
-            val account = task.getResult(ApiException::class.java)
-
-            val googleId = account?.id ?: ""
-            Log.i("Google ID",googleId)
-
-            val googleFirstName = account?.givenName ?: ""
-            Log.i("Google First Name", googleFirstName)
-
-            val googleLastName = account?.familyName ?: ""
-            Log.i("Google Last Name", googleLastName)
-
-            val googleEmail = account?.email ?: ""
-            Log.i("Google Email", googleEmail)
-
-            val googleProfilePicURL = account?.photoUrl.toString()
-            Log.i("Google Profile Pic URL", googleProfilePicURL)
-
-            val googleIdToken = account?.idToken ?: ""
-            Log.i("Google ID Token", googleIdToken)
-
+            // Signs into Google account successfully
+            // Starts MainActivity class
             val intent = Intent(this@SignInActivity, MainActivity::class.java)
             startActivity(intent)
         } catch (e: ApiException) {
+            // Signs in fails
             Log.e("failed code=", e.statusCode.toString())
         }
     }
